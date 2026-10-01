@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Maestro rural conectado · Aula virtual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Paleta: Pistachio #B9C255 · Frost #E6F1FA · Iced Denim #5798D7 */
+    --denim: #5798D7; --pistachio: #B9C255; --frost: #E6F1FA;
+    --tierra: #2E6AA6; --tierra-claro: #E6F1FA; --ocre: #B9C255; --ocre-claro: #EFF2D6;
+    --ciruela: #66711C; --tinta: #1B2A3A; --gris: #566575; --linea: #CFDDEA;
+    --fondo: #FFFFFF; --panel: #F3F8FC; --error: #B23A3A;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --denim: #5798D7; --pistachio: #B9C255; --frost: #E6F1FA;
+      --tierra: #8DBDEA; --tierra-claro: #1C2B3A; --ocre: #C9D16A; --ocre-claro: #2C3018;
+      --ciruela: #C9D16A; --tinta: #E6F1FA; --gris: #A9B6C3; --linea: #2F4256;
+      --fondo: #121A23; --panel: #18222D; --error: #E58A7A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --denim: #5798D7; --pistachio: #B9C255; --frost: #E6F1FA;
+    --tierra: #8DBDEA; --tierra-claro: #1C2B3A; --ocre: #C9D16A; --ocre-claro: #2C3018;
+    --ciruela: #C9D16A; --tinta: #E6F1FA; --gris: #A9B6C3; --linea: #2F4256;
+    --fondo: #121A23; --panel: #18222D; --error: #E58A7A;
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--fondo); color: var(--tinta);
+    font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+    font-size: 1.0625rem; line-height: 1.6;
+  }
+  h1, h2, h3 { font-family: "Bitter", Georgia, "Times New Roman", serif; line-height: 1.2; margin: 0 0 .6em; }
+  h1 { font-size: clamp(1.9rem, 4.5vw, 3rem); font-weight: 800; }
+  h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); color: var(--tierra); }
+  h3 { font-size: 1.15rem; }
+  p { margin: 0 0 1em; }
+  button { font: inherit; cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--ocre); outline-offset: 2px; }
+
+  .app { display: grid; grid-template-columns: 290px 1fr; min-height: 100%; }
+
+  /* Menú lateral */
+  aside {
+    background: var(--panel); border-right: 1px solid var(--linea);
+    padding: 1.4rem 1rem; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .marca { font-family: "Bitter", Georgia, serif; font-weight: 800; font-size: 1.25rem; color: var(--tierra); margin-bottom: .2rem; }
+  .marca-sub { color: var(--gris); font-size: .9rem; margin-bottom: 1.2rem; }
+  .progreso-global { margin-bottom: 1.2rem; }
+  .barra { height: 10px; background: var(--linea); border-radius: 5px; overflow: hidden; }
+  .barra > span { display: block; height: 100%; background: var(--denim); transition: width .4s ease; }
+  .progreso-global small { color: var(--gris); }
+  nav ul { list-style: none; padding: 0; margin: 0; }
+  nav li { margin-bottom: .25rem; }
+  .nav-btn {
+    width: 100%; text-align: left; background: none; border: 0; color: var(--tinta);
+    padding: .55rem .65rem; border-radius: 5px; display: flex; gap: .6rem; align-items: center;
+  }
+  .nav-btn:hover { background: var(--tierra-claro); }
+  .nav-btn[aria-current="page"] { background: var(--tierra); color: var(--fondo); }
+  .nav-num { font-family: "Bitter", Georgia, serif; font-weight: 800; min-width: 2rem; }
+  .nav-txt { flex: 1; font-size: .95rem; line-height: 1.3; }
+  .nav-estado { width: 1.3rem; height: 1.3rem; border-radius: 50%; border: 2px solid currentColor; opacity: .55; display: grid; place-items: center; font-size: .75rem; }
+  .nav-estado.hecho { background: var(--pistachio); border-color: var(--pistachio); color: #1B2A3A; opacity: 1; }
+  .nav-sep { border-top: 1px solid var(--linea); margin: .8rem 0; }
+
+  main { padding: 2rem clamp(1rem, 4vw, 3rem) 4rem; max-width: 960px; width: 100%; }
+  .lectura { max-width: 70ch; }
+
+  /* Inicio */
+  .hero { border-bottom: 1px solid var(--linea); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+  .hero .tipo { color: var(--ciruela); font-weight: 700; margin-bottom: .3rem; }
+  .ruta-barra { display: flex; width: 100%; min-height: 78px; border-radius: 6px; overflow: hidden; border: 1px solid var(--linea); margin: 1rem 0 .4rem; }
+  .ruta-barra button {
+    border: 0; border-right: 2px solid var(--fondo); display: flex; flex-direction: column; justify-content: center;
+    padding: .45rem .55rem; text-align: left; color: var(--tinta); min-width: 0; position: relative;
+  }
+  .ruta-barra button:last-child { border-right: 0; }
+  .ruta-barra strong { font-family: "Bitter", Georgia, serif; }
+  .ruta-barra small { font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ruta-barra .relleno { position: absolute; left: 0; bottom: 0; height: 5px; background: var(--denim); transition: width .4s ease; }
+  .c0 { background: var(--panel); } .c1, .c3, .c5 { background: var(--tierra-claro); } .c2, .c4 { background: var(--ocre-claro); }
+  .c6 { background: var(--denim); color: #0F2236 !important; }
+  .fichas { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .ficha { border-left: 4px solid var(--ocre); padding-left: .8rem; }
+  .ficha b { display: block; font-family: "Bitter", Georgia, serif; font-size: 1.3rem; }
+  .ficha span { color: var(--gris); font-size: .92rem; }
+  .boton {
+    background: var(--tierra); color: var(--fondo); border: 0; border-radius: 5px; padding: .65rem 1.2rem; font-weight: 700;
+  }
+  .boton.sec { background: transparent; color: var(--tierra); border: 2px solid var(--tierra); }
+  .boton:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* Módulo */
+  .mod-cabecera { margin-bottom: 1rem; }
+  .mod-meta { color: var(--gris); margin-bottom: .8rem; }
+  .objetivo { background: var(--panel); border-left: 4px solid var(--tierra); padding: .8rem 1rem; margin-bottom: 1rem; }
+  .comp { display: inline-block; font-size: .85rem; background: var(--ocre-claro); padding: .1rem .55rem; border-radius: 3px; margin: 0 .3rem .3rem 0; }
+  .pestanas { display: flex; gap: .3rem; border-bottom: 2px solid var(--linea); margin: 1.2rem 0 1.4rem; overflow-x: auto; }
+  .pestanas button {
+    background: none; border: 0; padding: .6rem .9rem; color: var(--gris); border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap;
+  }
+  .pestanas button[aria-selected="true"] { color: var(--tierra); border-bottom-color: var(--tierra); font-weight: 700; }
+
+  .leccion { border: 1px solid var(--linea); border-radius: 6px; margin-bottom: .8rem; }
+  .leccion summary { cursor: pointer; padding: .8rem 1rem; display: flex; gap: .7rem; align-items: center; list-style: none; font-weight: 700; }
+  .leccion summary::-webkit-details-marker { display: none; }
+  .leccion[open] { border-color: var(--tierra); }
+  .leccion .cuerpo { padding: 0 1rem 1rem; }
+  .leccion .cuerpo ul { padding-left: 1.2rem; }
+  .check { width: 1.4rem; height: 1.4rem; border-radius: 50%; border: 2px solid var(--linea); flex: none; display: grid; place-items: center; font-size: .8rem; }
+  .check.ok { background: var(--tierra); border-color: var(--tierra); color: var(--fondo); }
+
+  .actividad { display: flex; gap: 1rem; align-items: flex-start; border-bottom: 1px solid var(--linea); padding: 1rem 0; }
+  .actividad input { width: 1.3rem; height: 1.3rem; margin-top: .25rem; accent-color: var(--tierra); flex: none; }
+  .actividad label { cursor: pointer; }
+  .tipo-act { font-size: .82rem; color: var(--ciruela); font-weight: 700; }
+
+  .pregunta { margin-bottom: 1.4rem; }
+  .pregunta fieldset { border: 0; padding: 0; margin: 0; }
+  .pregunta legend { font-weight: 700; margin-bottom: .5rem; }
+  .opcion { display: flex; gap: .6rem; align-items: flex-start; padding: .45rem .6rem; border-radius: 5px; border: 1px solid var(--linea); margin-bottom: .35rem; cursor: pointer; }
+  .opcion input { margin-top: .3rem; accent-color: var(--tierra); }
+  .opcion.bien { border-color: var(--tierra); background: var(--tierra-claro); }
+  .opcion.mal { border-color: var(--error); }
+  .fb { font-size: .95rem; margin-top: .4rem; }
+  .fb.bien { color: var(--tierra); } .fb.mal { color: var(--error); }
+  .resultado { padding: .8rem 1rem; border-radius: 6px; margin-top: 1rem; }
+  .resultado.bien { background: var(--tierra-claro); } .resultado.mal { background: var(--ocre-claro); }
+
+  .foro-consigna { background: var(--ocre-claro); padding: .8rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+  .post { border-left: 3px solid var(--linea); padding: .3rem 0 .3rem 1rem; margin-bottom: 1rem; }
+  .post.tutor { border-left-color: var(--ciruela); }
+  .post.propio { border-left-color: var(--tierra); }
+  .post-autor { font-weight: 700; } .post-fecha { color: var(--gris); font-size: .85rem; }
+  textarea { width: 100%; min-height: 110px; font: inherit; padding: .7rem; border: 1px solid var(--linea); border-radius: 6px; background: var(--fondo); color: var(--tinta); resize: vertical; }
+  .aviso { color: var(--error); font-size: .95rem; }
+
+  .pie-mod { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--linea); }
+
+  .tabla-cont { overflow-x: auto; margin-bottom: 1.2rem; }
+  table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: .96rem; }
+  th, td { text-align: left; padding: .55rem .7rem; border-bottom: 1px solid var(--linea); vertical-align: top; }
+  th { font-family: "Bitter", Georgia, serif; background: var(--panel); }
+  td.num, th.num { text-align: right; }
+  tfoot td { font-weight: 700; border-top: 2px solid var(--tierra); }
+  .dos-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem 2rem; }
+  .referencias p { padding-left: 2.2em; text-indent: -2.2em; }
+  .pendiente { background: var(--ocre-claro); padding: 0 .3rem; border-radius: 3px; }
+
+  .certificado { border: 3px double var(--ocre); padding: 2rem; text-align: center; border-radius: 8px; margin-top: 1rem; }
+  .certificado h2 { color: var(--tierra); }
+
+  /* Material de estudio */
+  .tarjeta-lectura { border: 1px solid var(--linea); border-top: 5px solid var(--denim); border-radius: 8px; padding: 1.2rem 1.3rem; margin-bottom: 1.3rem; }
+  .tarjeta-lectura h3 { margin-bottom: .3rem; }
+  .tarjeta-lectura .meta { color: var(--gris); font-size: .93rem; margin-bottom: .8rem; }
+  .tarjeta-lectura .reflexion { background: var(--ocre-claro); border-radius: 6px; padding: .7rem 1rem; }
+  .guia { border-left: 4px solid var(--pistachio); padding: .2rem 0 .2rem 1rem; margin-bottom: 1.3rem; }
+  .glosario dt { font-family: "Bitter", Georgia, serif; font-weight: 700; margin-top: .9rem; color: var(--tierra); }
+  .glosario dd { margin: .2rem 0 0; }
+
+  /* Juegos */
+  .juego-panel { background: var(--panel); border-radius: 8px; padding: 1.3rem; }
+  .marcador { display: flex; gap: 1.5rem; flex-wrap: wrap; color: var(--gris); margin-bottom: 1rem; }
+  .marcador b { color: var(--tinta); }
+  .memoria { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .7rem; }
+  .carta {
+    min-height: 110px; border: 2px solid var(--denim); border-radius: 8px; background: var(--denim);
+    color: #0F2236; font-weight: 700; padding: .6rem; display: grid; place-items: center; text-align: center; font-size: .95rem;
+  }
+  .carta.abierta { background: var(--fondo); color: var(--tinta); }
+  .carta.abierta.def { font-weight: 400; }
+  .carta.hecha { background: var(--ocre-claro); border-color: var(--pistachio); color: var(--tinta); cursor: default; }
+  .carta .dorso { font-size: 1.8rem; font-family: "Bitter", Georgia, serif; }
+  .enunciado { font-size: 1.15rem; font-weight: 700; margin-bottom: .4rem; }
+  .opciones-juego { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
+  .opciones-juego .boton.sec.elegida-bien { background: var(--tierra-claro); }
+  .opciones-juego .boton.sec.elegida-mal { border-color: var(--error); color: var(--error); }
+
+  @media (max-width: 820px) {
+    .app { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--linea); }
+    nav ul { display: flex; gap: .3rem; overflow-x: auto; padding-bottom: .3rem; }
+    nav li { flex: none; margin: 0; }
+    .nav-txt { display: none; }
+    .nav-sep { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="marca">Maestro rural conectado</div>
+    <div class="marca-sub">Aula virtual · 72 horas</div>
+    <div class="progreso-global">
+      <div class="barra" aria-hidden="true"><span id="barra-global" style="width:0%"></span></div>
+      <small id="txt-global">0 % del curso completado</small>
+    </div>
+    <nav aria-label="Navegación del curso"><ul id="menu"></ul></nav>
+  </aside>
+  <main id="vista" tabindex="-1"></main>
+</div>
+
+<script>
+/* =========================================================
+   REFERENCIAS
+   Agrega aquí los artículos que encuentres en Elicit.
+   Escríbelos en formato APA 7 (texto plano; usa <em> para cursiva).
+   Se ordenan alfabéticamente de forma automática.
+   ========================================================= */
+const referencias = [
+  "Anthropic. (2026). <em>Claude</em> (versión Opus 5.5) [Modelo de lenguaje extenso]. https://claude.ai",
+  "Branch, R. M. (2009). <em>Instructional design: The ADDIE approach</em>. Springer.",
+  "Knowles, M. S., Holton, E. F., III, &amp; Swanson, R. A. (2015). <em>The adult learner: The definitive classic in adult education and human resource development</em> (8.ª ed.). Routledge.",
+  "Ministerio de Educación Nacional. (2013). <em>Competencias TIC para el desarrollo profesional docente</em>. MEN.",
+  "Redecker, C. (2017). <em>European framework for the digital competence of educators: DigCompEdu</em>. Publications Office of the European Union.",
+  "Siemens, G. (2005). Connectivism: A learning theory for the digital age. <em>International Journal of Instructional Technology and Distance Learning, 2</em>(1), 3–10.",
+  "UNESCO. (2018). <em>UNESCO ICT competency framework for teachers</em> (versión 3). UNESCO.",
+  "Cifuentes Garzón, J. E., &amp; Burgos Calderón, D. B. (2023). Formación de docentes de provincia en tiempos de pandemia. <em>Zona Próxima, 39</em>, 103–127. https://doi.org/10.14482/zp.38.326.951",
+  "Giraldo Cardozo, J. C., &amp; Muñoz Vargas, I. C. (2025). Comunicación científica y ética en la era de la inteligencia artificial [Editorial]. <em>Acta Scientiæ Informaticæ, 9</em>(2). https://doi.org/10.21897/26192659.4189",
+  "Uribe-Zapata, A., Zambrano-Acosta, J. F., &amp; Cano-Vásquez, L. M. (2023). Usos educativos de TIC en docentes rurales de Colombia. <em>Revista de Investigación, Desarrollo e Innovación, 13</em>(2), 287–298. https://doi.org/10.19053/20278306.v13.n2.2023.16834"
+  // , "Apellido, A. (2023). Título del artículo. <em>Nombre de la revista, 10</em>(2), 1–20. https://doi.org/..."
+];
+
+/* =========================================================
+   CONTENIDO DEL CURSO
+   ========================================================= */
+const modulos = [
+  {
+    id: "m0", num: "M0", titulo: "Bienvenida y diagnóstico", horas: 4, sinc: 2, aut: 2, semanas: "Semana 1",
+    objetivo: "Familiarizarse con el aula virtual y las normas de participación, y reconocer el propio nivel de competencia digital.",
+    comp: ["Tecnológica"],
+    lecciones: [
+      { t: "Cómo funciona este curso", c: "<p>El curso dura 72 horas repartidas en 9 semanas, con una dedicación aproximada de 8 horas semanales. Cada módulo tiene lecciones, actividades, una autoevaluación y un foro.</p><p>Todo el material se puede descargar desde la app de Moodle para estudiarlo sin conexión y sincronizar tu avance cuando tengas señal.</p>" },
+      { t: "Pautas de participación y netiqueta", c: "<ul><li>En cada foro publica un aporte propio y responde al menos a dos colegas.</li><li>Escribe con respeto, de forma breve y clara.</li><li>Entrega tus actividades dentro de la semana indicada.</li><li>El tutor responde tus mensajes en un plazo máximo de 48 horas.</li></ul>" },
+      { t: "¿Dónde estoy? Autodiagnóstico TIC", c: "<p>El MEN (2013) describe tres momentos en el desarrollo de las competencias TIC docentes: <strong>explorador</strong>, <strong>integrador</strong> e <strong>innovador</strong>. Este curso parte del nivel explorador y te acerca al integrador.</p><p>No estás solo en ese punto de partida: en un estudio con 241 docentes rurales de Antioquia, el 55 % se ubicó en el nivel explorador (Uribe-Zapata et al., 2023).</p><p>Antes de avanzar, responde con honestidad el cuestionario diagnóstico: no tiene nota y sirve para que el tutor adapte el acompañamiento.</p>" }
+    ],
+    actividades: [
+      { tipo: "Sincrónica", t: "Encuentro de bienvenida", d: "Videoconferencia de 2 horas por Google Meet. Queda grabada para quien no pueda conectarse." },
+      { tipo: "Foro", t: "Mi escuela y mi conexión", d: "Preséntate y cuenta cómo es tu sede y con qué conectividad cuentas." },
+      { tipo: "Cuestionario", t: "Autodiagnóstico de competencias TIC", d: "Cuestionario diagnóstico, no calificable." }
+    ],
+    quiz: [
+      { p: "¿Cuántas horas semanales se recomienda dedicar al curso?", o: ["2 horas", "8 horas", "20 horas"], ok: 1, fb: "Son 72 horas en 9 semanas, es decir, unas 8 horas por semana." },
+      { p: "¿Cuál es la participación mínima esperada en cada foro?", o: ["Solo leer los aportes", "Un aporte propio y dos respuestas a colegas", "Un aporte propio"], ok: 1, fb: "La interacción entre pares es parte central del aprendizaje en red." },
+      { p: "¿En cuánto tiempo responde el tutor como máximo?", o: ["48 horas", "Una semana", "Solo en los encuentros sincrónicos"], ok: 0, fb: "El tutor se compromete a responder en máximo 48 horas." }
+    ],
+    foro: "Preséntate: ¿cómo se llama tu sede, qué grados atiendes y cómo es la conectividad en tu escuela?",
+    evaluacion: "Diagnóstica, no calificable."
+  },
+  {
+    id: "m1", num: "M1", titulo: "Alfabetización digital y uso seguro", horas: 12, sinc: 2, aut: 10, semanas: "Semanas 1–2",
+    objetivo: "Manejar funciones básicas del celular y el computador, gestionar archivos en la nube y aplicar prácticas de seguridad digital.",
+    comp: ["Tecnológica"],
+    lecciones: [
+      { t: "Archivos y carpetas en la nube", c: "<p>Google Drive permite guardar documentos, fotos y videos y consultarlos desde cualquier dispositivo. Organiza tus archivos por periodo, grado y área, y usa nombres claros (por ejemplo, <em>2026_P3_Grado5_Ciencias</em>).</p>" },
+      { t: "Ahorrar datos y trabajar sin conexión", c: "<ul><li>Descarga videos y documentos cuando tengas wifi.</li><li>Activa el modo sin conexión en Drive y en la app de Moodle.</li><li>Prefiere audios y PDF livianos sobre videos largos.</li></ul>" },
+      { t: "Seguridad y protección de datos", c: "<p>Usa contraseñas largas (una frase fácil de recordar para ti) y activa la verificación en dos pasos. Los datos de tus estudiantes están protegidos por la Ley 1581 de 2012: no publiques fotos, notas ni datos personales en grupos abiertos o redes sociales.</p>" }
+    ],
+    actividades: [
+      { tipo: "Tarea", t: "Organiza tu carpeta de planeación", d: "Crea en Drive la estructura de carpetas de tu periodo y sube una captura como evidencia." },
+      { tipo: "Foro", t: "Riesgos digitales en mi comunidad", d: "Comparte un riesgo digital que hayas visto en tu escuela y cómo prevenirlo." },
+      { tipo: "Cuestionario", t: "Cuestionario de seguridad digital", d: "Cinco preguntas sobre contraseñas, datos y ciudadanía digital." }
+    ],
+    quiz: [
+      { p: "¿Cuál de estas contraseñas es más segura?", o: ["123456", "Maria1990", "MiEscuelaTieneTresSamanes!"], ok: 2, fb: "Una frase larga con mayúsculas y signos es más difícil de adivinar y fácil de recordar." },
+      { p: "Con conexión intermitente, la mejor práctica es…", o: ["Ver los videos en línea cada vez", "Descargar el material con wifi y estudiarlo sin conexión", "Esperar a tener buena señal para todo"], ok: 1, fb: "Descargar con wifi ahorra datos y permite avanzar sin señal." },
+      { p: "¿Qué debes evitar con los datos de tus estudiantes?", o: ["Guardarlos en una carpeta privada", "Publicar sus notas en un grupo abierto", "Pedir autorización a los acudientes"], ok: 1, fb: "Publicar datos personales en espacios abiertos vulnera su privacidad." }
+    ],
+    foro: "¿Qué riesgo digital has visto en tu comunidad escolar (estafas, fotos compartidas, contraseñas débiles…) y cómo lo prevendrías?",
+    evaluacion: "Evidencia de la carpeta organizada y cuestionario (10 %)."
+  },
+  {
+    id: "m2", num: "M2", titulo: "Comunicación educativa digital", horas: 12, sinc: 2, aut: 10, semanas: "Semanas 3–4",
+    objetivo: "Usar canales digitales para comunicarse de forma clara y responsable con estudiantes, familias y colegas.",
+    comp: ["Comunicativa", "De gestión"],
+    lecciones: [
+      { t: "WhatsApp con propósito educativo", c: "<p>Las listas de difusión envían un mismo mensaje a muchas personas sin que vean las respuestas de los demás; son útiles para avisos a familias. Los audios cortos funcionan bien para acudientes con poca lectura.</p><p>En Cundinamarca, un grupo de docentes de provincia organizó su propia formación entre colegas por WhatsApp durante la pandemia: lo eligieron por ser sencillo y funcionar con poca conectividad (Cifuentes Garzón y Burgos Calderón, 2023).</p>" },
+      { t: "Google Classroom básico", c: "<p>En Classroom puedes publicar <strong>anuncios</strong> (información general) y <strong>tareas</strong> (con fecha de entrega y calificación). Los estudiantes pueden entregar fotos de sus trabajos desde el celular.</p>" },
+      { t: "Protocolo de comunicación", c: "<ul><li>Define horarios de atención y comunícalos.</li><li>Elige qué canal se usa para qué (avisos, dudas, entregas).</li><li>Usa un lenguaje claro, cordial y breve.</li></ul>" }
+    ],
+    actividades: [
+      { tipo: "Sincrónica", t: "Taller de Google Classroom", d: "Sesión práctica guiada de 2 horas." },
+      { tipo: "Tarea", t: "Crea tu clase en Classroom", d: "Publica un anuncio y una tarea; entrega una captura como evidencia." },
+      { tipo: "Tarea", t: "Protocolo de comunicación con familias", d: "Documento de una página con canales, horarios y normas." },
+      { tipo: "Foro", t: "Buenas prácticas de comunicación", d: "Comparte una estrategia que te haya funcionado con las familias." }
+    ],
+    quiz: [
+      { p: "¿Para qué sirve una lista de difusión de WhatsApp?", o: ["Para chatear en grupo", "Para enviar un mensaje a muchos sin que vean las respuestas de otros", "Para hacer videollamadas"], ok: 1, fb: "Cada destinatario recibe el mensaje como si fuera individual." },
+      { p: "En Classroom, ¿qué publicación tiene fecha de entrega y calificación?", o: ["Anuncio", "Tarea", "Comentario"], ok: 1, fb: "Las tareas permiten fijar fecha, recibir entregas y calificar." },
+      { p: "Un buen protocolo de comunicación incluye…", o: ["Horarios de atención y canales definidos", "Responder a cualquier hora", "Usar todos los canales para todo"], ok: 0, fb: "Definir horarios y canales protege tu tiempo y organiza la información." }
+    ],
+    foro: "¿Qué estrategia te ha funcionado para comunicarte con las familias de tus estudiantes? ¿Qué dificultades encuentras?",
+    evaluacion: "Protocolo de comunicación y evidencia de la clase creada (10 %)."
+  },
+  {
+    id: "m3", num: "M3", titulo: "Recursos educativos abiertos", horas: 12, sinc: 2, aut: 10, semanas: "Semanas 4–5",
+    objetivo: "Buscar, evaluar y adaptar recursos educativos abiertos para usarlos en el aula, con o sin conexión.",
+    comp: ["Pedagógica", "Investigativa"],
+    lecciones: [
+      { t: "¿Qué es un recurso educativo abierto?", c: "<p>Un REA es un material educativo con una licencia que permite usarlo, adaptarlo y compartirlo libremente. En Colombia puedes encontrar muchos en <strong>Colombia Aprende</strong> y <strong>Contacto Maestro</strong>, portales del Ministerio de Educación.</p>" },
+      { t: "Licencias Creative Commons", c: "<ul><li><strong>BY</strong>: debes reconocer al autor.</li><li><strong>SA</strong>: si lo adaptas, compártelo con la misma licencia.</li><li><strong>NC</strong>: solo para usos no comerciales.</li><li><strong>ND</strong>: no se permiten obras derivadas.</li></ul>" },
+      { t: "Cómo evaluar un recurso", c: "<p>Revisa su pertinencia con el currículo, la confiabilidad de la fuente, que sea adecuado para la edad, accesible y liviano para descargar.</p>" }
+    ],
+    actividades: [
+      { tipo: "Tarea", t: "Búsqueda guiada", d: "Encuentra tres recursos para un tema de tu área en portales abiertos." },
+      { tipo: "Tarea", t: "Fichas de evaluación", d: "Evalúa los tres recursos con la ficha de criterios." },
+      { tipo: "Foro", t: "El mejor recurso que encontré", d: "Comparte el enlace y explica por qué lo usarías." }
+    ],
+    quiz: [
+      { p: "Un recurso educativo abierto se caracteriza por…", o: ["Ser gratuito pero sin permiso de modificarlo", "Tener una licencia que permite usarlo, adaptarlo y compartirlo", "Estar solo en inglés"], ok: 1, fb: "Lo que lo hace abierto es su licencia, no solo que sea gratis." },
+      { p: "Un recurso con licencia CC BY-NC se puede…", o: ["Vender", "Usar en clase citando al autor", "Usar sin mencionar al autor"], ok: 1, fb: "BY exige atribución y NC impide el uso comercial." },
+      { p: "¿Cuál NO es un criterio para evaluar un recurso?", o: ["Pertinencia curricular", "Confiabilidad de la fuente", "Que tenga muchos colores"], ok: 2, fb: "La apariencia importa menos que la pertinencia y la calidad." }
+    ],
+    foro: "Comparte el mejor recurso educativo abierto que encontraste: ¿para qué tema y grado lo usarías y por qué?",
+    evaluacion: "Fichas de evaluación de recursos (10 %)."
+  },
+  {
+    id: "m4", num: "M4", titulo: "Creación de contenidos sencillos", horas: 14, sinc: 2, aut: 12, semanas: "Semanas 6–7",
+    objetivo: "Crear recursos didácticos propios con el celular y herramientas gratuitas.",
+    comp: ["Tecnológica", "Pedagógica"],
+    lecciones: [
+      { t: "Guías e infografías con Canva", c: "<p>Canva tiene plantillas educativas gratuitas y funciona desde el celular. Usa pocas fuentes, buen contraste y una idea principal por sección.</p>" },
+      { t: "Video y audio con el celular", c: "<ul><li>Graba en horizontal, con buena luz y en un lugar silencioso.</li><li>Mantén los videos por debajo de 3 minutos.</li><li>Un audio corto puede reemplazar un video cuando hay poca conexión.</li></ul>" },
+      { t: "Recursos accesibles y livianos", c: "<p>Usa letra legible, buen contraste y lenguaje sencillo. Comprime imágenes y videos antes de compartirlos para que tus estudiantes puedan descargarlos con pocos datos.</p>" },
+      { t: "Usar la IA generativa con responsabilidad", c: "<p>Las herramientas de IA pueden ayudarte a redactar guías, proponer ideas o resumir textos, pero tú sigues siendo el autor y el responsable del contenido (Giraldo Cardozo y Muñoz Vargas, 2025).</p><ul><li>Verifica cada dato y referencia: la IA puede inventarlos.</li><li>No subas datos personales de tus estudiantes.</li><li>Indica qué herramienta usaste y para qué.</li></ul>" }
+    ],
+    actividades: [
+      { tipo: "Sincrónica", t: "Taller de Canva", d: "Sesión práctica guiada de 2 horas." },
+      { tipo: "Tarea", t: "Crea una infografía", d: "Diseña una infografía sobre un tema de tu clase." },
+      { tipo: "Tarea", t: "Graba un video corto", d: "Video de menos de 3 minutos explicando un concepto." },
+      { tipo: "Foro", t: "Coevaluación entre pares", d: "Revisa el trabajo de dos colegas con la rúbrica y deja comentarios." }
+    ],
+    quiz: [
+      { p: "¿Qué duración se recomienda para un video educativo?", o: ["Menos de 3 minutos", "Entre 20 y 30 minutos", "No importa la duración"], ok: 0, fb: "Los videos cortos mantienen la atención y pesan menos." },
+      { p: "Un recurso accesible debe tener…", o: ["Letra decorativa pequeña", "Buen contraste y letra legible", "Mucho texto en cada imagen"], ok: 1, fb: "El contraste y la legibilidad ayudan a todos los estudiantes." },
+      { p: "Si tus estudiantes tienen pocos datos, conviene…", o: ["Enviar videos en alta resolución", "Comprimir archivos o enviar audios cortos", "No enviar material"], ok: 1, fb: "Archivos livianos llegan a más estudiantes." }
+    ],
+    foro: "Publica tu infografía o video y comenta el trabajo de dos colegas usando la rúbrica: ¿qué funciona y qué mejorarías?",
+    evaluacion: "Recursos creados, con rúbrica, y coevaluación (15 %)."
+  },
+  {
+    id: "m5", num: "M5", titulo: "Evaluación con herramientas digitales", horas: 10, sinc: 2, aut: 8, semanas: "Semanas 7–8",
+    objetivo: "Diseñar instrumentos de evaluación digital y usar sus resultados para retroalimentar a los estudiantes.",
+    comp: ["Pedagógica", "De gestión"],
+    lecciones: [
+      { t: "Cuestionarios con Google Forms", c: "<p>Al activar el modo <strong>cuestionario</strong> en Google Forms puedes asignar puntos y respuestas correctas, y el formulario se califica solo. Los resultados se ven en gráficos por pregunta.</p>" },
+      { t: "Rúbricas y listas de cotejo", c: "<p>Una rúbrica combina <strong>criterios</strong> (qué se evalúa) y <strong>niveles de desempeño</strong> (qué tan bien se logra). Compártela con los estudiantes antes de la actividad.</p>" },
+      { t: "Retroalimentar con datos", c: "<p>Revisa qué preguntas fallaron más para reforzar esos temas. Una buena retroalimentación es específica, oportuna y orientada a mejorar.</p>" }
+    ],
+    actividades: [
+      { tipo: "Sincrónica", t: "Encuentro: evaluar con Forms", d: "Sesión práctica de 2 horas." },
+      { tipo: "Tarea", t: "Cuestionario autocalificable", d: "Crea un cuestionario de 5 preguntas para tu clase." },
+      { tipo: "Tarea", t: "Diseña una rúbrica", d: "Rúbrica con al menos 3 criterios y 3 niveles para una actividad propia." }
+    ],
+    quiz: [
+      { p: "Para que Google Forms califique solo, debes…", o: ["Activar el modo cuestionario", "Enviarlo por correo", "Agregar imágenes"], ok: 0, fb: "El modo cuestionario permite asignar respuestas correctas y puntos." },
+      { p: "Una rúbrica está compuesta por…", o: ["Solo una nota final", "Criterios y niveles de desempeño", "Preguntas de selección múltiple"], ok: 1, fb: "Criterios y niveles permiten evaluar de forma transparente." },
+      { p: "Una buena retroalimentación es…", o: ["General y tardía", "Específica y oportuna", "Solo la nota"], ok: 1, fb: "Decir qué mejorar y a tiempo es lo que ayuda a aprender." }
+    ],
+    foro: "¿Cómo usarías los resultados de un cuestionario digital para ajustar tus clases?",
+    evaluacion: "Cuestionario y rúbrica diseñados (10 %)."
+  },
+  {
+    id: "m6", num: "M6", titulo: "Proyecto integrador", horas: 8, sinc: 2, aut: 6, semanas: "Semana 9",
+    objetivo: "Integrar lo aprendido en una secuencia didáctica con apoyo TIC aplicable en tu propia sede.",
+    comp: ["Pedagógica", "Comunicativa", "Investigativa"],
+    lecciones: [
+      { t: "Estructura de la secuencia didáctica", c: "<p>Tu secuencia debe tener <strong>inicio</strong> (activar saberes previos), <strong>desarrollo</strong> (actividades con los recursos que creaste) y <strong>cierre</strong> (evaluación con tus instrumentos digitales).</p>" },
+      { t: "Tu portafolio digital", c: "<p>Reúne en una carpeta de Drive las evidencias de todos los módulos: carpeta organizada, protocolo, fichas de REA, infografía, video, cuestionario y rúbrica.</p>" },
+      { t: "Reflexión sobre tu práctica", c: "<p>Escribe una reflexión breve: ¿qué cambió en tu forma de enseñar?, ¿qué herramienta usarás primero?, ¿qué retos anticipas en tu sede?</p>" }
+    ],
+    actividades: [
+      { tipo: "Tarea", t: "Entrega de la secuencia didáctica", d: "Proyecto integrador con los recursos creados en el curso." },
+      { tipo: "Tarea", t: "Entrega del portafolio digital", d: "Enlace a la carpeta de Drive con todas tus evidencias." },
+      { tipo: "Sincrónica", t: "Socialización de proyectos", d: "Presenta tu proyecto en 5 minutos." },
+      { tipo: "Encuesta", t: "Evaluación del curso", d: "Tu opinión ayuda a mejorar las próximas cohortes." }
+    ],
+    quiz: [
+      { p: "¿Cuáles son los momentos de una secuencia didáctica?", o: ["Inicio, desarrollo y cierre", "Solo evaluación", "Diagnóstico y nota"], ok: 0, fb: "Esta estructura organiza el aprendizaje de principio a fin." },
+      { p: "El portafolio digital contiene…", o: ["Solo el proyecto final", "Las evidencias de todos los módulos", "Las notas de los compañeros"], ok: 1, fb: "Muestra tu proceso completo de aprendizaje." },
+      { p: "El propósito del proyecto integrador es…", o: ["Aplicar lo aprendido en tu aula real", "Repetir los cuestionarios", "Aprender una herramienta nueva"], ok: 0, fb: "El curso busca que transfieras lo aprendido a tu práctica." }
+    ],
+    foro: "Comparte en pocas líneas tu proyecto: ¿qué tema, qué grado y qué herramientas digitales usarás?",
+    evaluacion: "Proyecto integrador (25 %) y portafolio digital (10 %)."
+  }
+];
+
+/* =========================================================
+   ESTADO (solo en memoria durante la sesión)
+   ========================================================= */
+const estado = {
+  vista: "inicio",
+  pestana: "lecciones",
+  lecciones: {},     // "m1-0": true
+  actividades: {},   // "m1-2": true
+  quiz: {},          // "m1": {respuestas: [], nota: 2, enviado: true}
+  foro: {}           // "m1": [{autor, texto, fecha}]
+};
+
+const $ = (s) => document.querySelector(s);
+
+function progresoModulo(m) {
+  const total = m.lecciones.length + m.actividades.length + 1;
+  let hechos = 0;
+  m.lecciones.forEach((_, i) => { if (estado.lecciones[m.id + "-" + i]) hechos++; });
+  m.actividades.forEach((_, i) => { if (estado.actividades[m.id + "-" + i]) hechos++; });
+  if (estado.quiz[m.id] && estado.quiz[m.id].aprobado) hechos++;
+  return Math.round((hechos / total) * 100);
+}
+function progresoGlobal() {
+  let horasHechas = 0;
+  modulos.forEach(m => { horasHechas += m.horas * progresoModulo(m) / 100; });
+  return Math.round((horasHechas / 72) * 100);
+}
+
+/* ---------- Menú ---------- */
+function pintarMenu() {
+  const items = [{ id: "inicio", num: "⌂", txt: "Inicio" }]
+    .concat(modulos.map(m => ({ id: m.id, num: m.num, txt: m.titulo, m })))
+    .concat([{ sep: true }, { id: "material", num: "📚", txt: "Material de estudio" }, { id: "juegos", num: "🎲", txt: "Juegos de repaso" }, { id: "info", num: "i", txt: "Información del curso" }, { id: "refs", num: "R", txt: "Referencias" }]);
+  $("#menu").innerHTML = items.map(it => {
+    if (it.sep) return '<li class="nav-sep" role="separator"></li>';
+    const hecho = it.m && progresoModulo(it.m) === 100;
+    const estadoIcono = it.m ? `<span class="nav-estado ${hecho ? "hecho" : ""}" aria-label="${hecho ? "completado" : "pendiente"}">${hecho ? "✓" : ""}</span>` : "";
+    return `<li><button class="nav-btn" data-ir="${it.id}" ${estado.vista === it.id ? 'aria-current="page"' : ""}>
+      <span class="nav-num">${it.num}</span><span class="nav-txt">${it.txt}</span>${estadoIcono}</button></li>`;
+  }).join("");
+  const g = progresoGlobal();
+  $("#barra-global").style.width = g + "%";
+  $("#txt-global").textContent = g + " % del curso completado";
+}
+
+/* ---------- Vistas ---------- */
+function vistaInicio() {
+  const g = progresoGlobal();
+  const siguiente = modulos.find(m => progresoModulo(m) < 100);
+  return `
+  <div class="hero">
+    <p class="tipo">Curso virtual de formación docente</p>
+    <h1>Maestro rural conectado</h1>
+    <p class="lectura">Competencias digitales básicas para docentes de sedes rurales: planear, comunicarse con estudiantes y familias, y crear recursos para tus clases, incluso con baja conectividad.</p>
+    <div class="fichas">
+      <div class="ficha"><b>72 horas</b><span>7 módulos</span></div>
+      <div class="ficha"><b>9 semanas</b><span>8 horas por semana</span></div>
+      <div class="ficha"><b>14 h + 58 h</b><span>sincrónicas + autónomas</span></div>
+      <div class="ficha"><b>${g} %</b><span>tu avance</span></div>
+    </div>
+    ${siguiente
+      ? `<button class="boton" data-ir="${siguiente.id}">${g === 0 ? "Empezar el curso" : "Continuar con " + siguiente.num}</button>`
+      : `<div class="certificado"><h2>¡Curso completado!</h2><p>Completaste las 72 horas de <strong>Maestro rural conectado</strong>.</p></div>`}
+  </div>
+  <h2>Tu ruta de 72 horas</h2>
+  <p class="lectura">Cada tramo es proporcional a las horas del módulo; la línea inferior muestra tu avance. Selecciona uno para entrar.</p>
+  <div class="ruta-barra">
+    ${modulos.map((m, i) => `<button class="c${i}" style="flex:${m.horas}" data-ir="${m.id}" aria-label="${m.num} ${m.titulo}, ${m.horas} horas, ${progresoModulo(m)} % completado">
+      <strong>${m.horas} h</strong><small>${m.num} ${m.titulo}</small><span class="relleno" style="width:${progresoModulo(m)}%"></span></button>`).join("")}
+  </div>`;
+}
+
+function vistaModulo(m) {
+  const idx = modulos.indexOf(m);
+  const p = progresoModulo(m);
+  const pestanas = [["lecciones", "Lecciones"], ["actividades", "Actividades"], ["quiz", "Autoevaluación"], ["foro", "Foro"]];
+  let cuerpo = "";
+
+  if (estado.pestana === "lecciones") {
+    cuerpo = m.lecciones.map((l, i) => {
+      const k = m.id + "-" + i, ok = estado.lecciones[k];
+      return `<details class="leccion" data-leccion="${k}">
+        <summary><span class="check ${ok ? "ok" : ""}">${ok ? "✓" : ""}</span>Lección ${i + 1}. ${l.t}</summary>
+        <div class="cuerpo">${l.c}${ok ? "" : `<button class="boton sec" data-leida="${k}">Marcar como leída</button>`}</div>
+      </details>`;
+    }).join("");
+  }
+
+  if (estado.pestana === "actividades") {
+    cuerpo = m.actividades.map((a, i) => {
+      const k = m.id + "-" + i;
+      return `<div class="actividad">
+        <input type="checkbox" id="act-${k}" data-act="${k}" ${estado.actividades[k] ? "checked" : ""}>
+        <label for="act-${k}"><span class="tipo-act">${a.tipo}</span><br><strong>${a.t}</strong><br>${a.d}</label>
+      </div>`;
+    }).join("") + `<p style="margin-top:1rem"><strong>Evaluación del módulo:</strong> ${m.evaluacion}</p>`;
+  }
+
+  if (estado.pestana === "quiz") {
+    const q = estado.quiz[m.id] || { respuestas: [], enviado: false };
+    cuerpo = `<p class="lectura">Responde las ${m.quiz.length} preguntas. Necesitas al menos ${m.quiz.length - 1} correctas para aprobar; puedes intentarlo las veces que quieras.</p>` +
+      m.quiz.map((pr, i) => `<div class="pregunta"><fieldset><legend>${i + 1}. ${pr.p}</legend>
+        ${pr.o.map((op, j) => {
+          let cls = "";
+          if (q.enviado && q.respuestas[i] === j) cls = j === pr.ok ? "bien" : "mal";
+          return `<label class="opcion ${cls}"><input type="radio" name="q-${i}" value="${j}" ${q.respuestas[i] === j ? "checked" : ""} ${q.enviado ? "disabled" : ""}> ${op}</label>`;
+        }).join("")}
+        ${q.enviado ? `<p class="fb ${q.respuestas[i] === pr.ok ? "bien" : "mal"}">${q.respuestas[i] === pr.ok ? "Correcto. " : "Incorrecto. "}${pr.fb}</p>` : ""}
+      </fieldset></div>`).join("") +
+      (q.enviado
+        ? `<div class="resultado ${q.aprobado ? "bien" : "mal"}" role="status"><strong>${q.nota} de ${m.quiz.length} correctas.</strong> ${q.aprobado ? "Autoevaluación aprobada." : "Repasa las lecciones e inténtalo de nuevo."}</div>
+           <button class="boton sec" data-reintentar="${m.id}" style="margin-top:1rem">Intentar de nuevo</button>`
+        : `<button class="boton" data-enviar-quiz="${m.id}">Enviar respuestas</button><p class="aviso" id="aviso-quiz" role="alert"></p>`);
+  }
+
+  if (estado.pestana === "foro") {
+    const posts = [{ autor: "Tutor del curso", texto: "Bienvenidos al foro de este módulo. Recuerden publicar un aporte propio y responder al menos a dos colegas.", fecha: "Inicio del módulo", tipo: "tutor" }]
+      .concat(estado.foro[m.id] || []);
+    cuerpo = `<div class="foro-consigna"><strong>Consigna:</strong> ${m.foro}</div>
+      ${posts.map(ps => `<div class="post ${ps.tipo}"><div><span class="post-autor">${ps.autor}</span> <span class="post-fecha">${ps.fecha}</span></div><p>${ps.texto}</p></div>`).join("")}
+      <label for="nuevo-post"><strong>Tu aporte</strong></label>
+      <textarea id="nuevo-post" placeholder="Escribe tu aporte aquí…"></textarea>
+      <p class="aviso" id="aviso-foro" role="alert"></p>
+      <button class="boton" data-publicar="${m.id}">Publicar aporte</button>`;
+  }
+
+  return `
+  <div class="mod-cabecera">
+    <p class="mod-meta">${m.num} · ${m.semanas} · ${m.horas} horas (${m.sinc} sincrónicas, ${m.aut} autónomas)</p>
+    <h1>${m.titulo}</h1>
+    <div class="barra" style="max-width:420px" aria-hidden="true"><span style="width:${p}%"></span></div>
+    <small>${p} % del módulo completado</small>
+  </div>
+  <p class="objetivo"><strong>Objetivo:</strong> ${m.objetivo}</p>
+  <div>${m.comp.map(c => `<span class="comp">Competencia ${c.toLowerCase()}</span>`).join("")}</div>
+  <div class="pestanas" role="tablist">
+    ${pestanas.map(([id, n]) => `<button role="tab" aria-selected="${estado.pestana === id}" data-pestana="${id}">${n}</button>`).join("")}
+  </div>
+  <div role="tabpanel">${cuerpo}</div>
+  <div class="pie-mod">
+    ${idx > 0 ? `<button class="boton sec" data-ir="${modulos[idx - 1].id}">Anterior: ${modulos[idx - 1].num}</button>` : `<span></span>`}
+    ${idx < modulos.length - 1 ? `<button class="boton" data-ir="${modulos[idx + 1].id}">Siguiente: ${modulos[idx + 1].num}</button>` : `<button class="boton" data-ir="inicio">Volver al inicio</button>`}
+  </div>`;
+}
+
+function vistaInfo() {
+  return `
+  <h1>Información del curso</h1>
+  <div class="dos-col">
+    <div>
+      <h2>Propósito</h2>
+      <p>Fortalecer las competencias digitales básicas de docentes de básica y media de sedes rurales para que usen herramientas digitales en la planeación, la comunicación con estudiantes y familias, y la creación de recursos sencillos, en contextos de conectividad intermitente y acceso principalmente por celular.</p>
+    </div>
+    <div>
+      <h2>Justificación</h2>
+      <p>En la ruralidad colombiana el reto no es solo el acceso: en un estudio con 241 docentes rurales de Antioquia, el 97,1 % tenía celular, pero el 55 % se ubicaba en el nivel explorador de competencias TIC, y el uso de tecnologías para evaluar era muy inferior al uso para planear (Uribe-Zapata et al., 2023). A su vez, una experiencia de formación entre docentes por WhatsApp en Cundinamarca mostró que el aprendizaje móvil es viable aun con conectividad limitada y que los docentes piden más cursos en línea (Cifuentes Garzón y Burgos Calderón, 2023).</p>
+      <p>El curso se fundamenta en las competencias TIC del MEN (2013), DigCompEdu (Redecker, 2017) y el marco de la UNESCO (2018); en la andragogía (Knowles et al., 2015) y el conectivismo (Siemens, 2005). El uso de IA generativa en su diseño se declara y verifica según principios de transparencia y autoría humana (Giraldo Cardozo y Muñoz Vargas, 2025).</p>
+    </div>
+  </div>
+  <h2>Modelo de diseño instruccional: ADDIE</h2>
+  <p class="lectura">Se eligió ADDIE (Branch, 2009) porque su fase de análisis permite diagnosticar la conectividad y el nivel digital real de los docentes antes de diseñar, y su evaluación continua permite ajustar el curso entre cohortes.</p>
+  <div class="tabla-cont"><table>
+    <thead><tr><th>Fase</th><th>Aplicación en el curso</th></tr></thead>
+    <tbody>
+      <tr><td>Análisis</td><td>Encuesta diagnóstica de dispositivos, conectividad y nivel TIC (M0).</td></tr>
+      <tr><td>Diseño</td><td>Objetivos por módulo alineados con las competencias del MEN y plan de 72 horas.</td></tr>
+      <tr><td>Desarrollo</td><td>Recursos livianos y descargables: microvideos, guías PDF, infografías y cuestionarios.</td></tr>
+      <tr><td>Implementación</td><td>Moodle con app móvil sin conexión, grupo de WhatsApp y encuentros quincenales grabados.</td></tr>
+      <tr><td>Evaluación</td><td>Autoevaluaciones por módulo, proyecto integrador y encuesta de satisfacción.</td></tr>
+    </tbody></table></div>
+  <div class="dos-col">
+    <div>
+      <h2>Espacios de comunicación</h2>
+      <p><strong>Asincrónicos:</strong> foros por módulo para la construcción colectiva, WhatsApp para soporte rápido y avisos, y mensajería del aula para consultas individuales.</p>
+      <p><strong>Sincrónicos:</strong> videoconferencia quincenal de 2 horas por Google Meet, grabada y compartida en versión liviana.</p>
+    </div>
+    <div>
+      <h2>Rol del tutor y pautas</h2>
+      <p>El tutor es facilitador y acompañante: modera foros, orienta, motiva y hace seguimiento a quienes se atrasan. Responde en máximo 48 horas y da retroalimentación personalizada con rúbrica en cada entrega. Se espera un aporte propio y dos respuestas a colegas por foro.</p>
+    </div>
+  </div>
+  <h2>Plan de evaluación</h2>
+  <div class="tabla-cont"><table>
+    <thead><tr><th>Componente</th><th>Tipo</th><th class="num">Peso</th></tr></thead>
+    <tbody>
+      <tr><td>Autodiagnóstico (M0)</td><td>Diagnóstica</td><td class="num">0 %</td></tr>
+      <tr><td>Participación en foros</td><td>Formativa</td><td class="num">10 %</td></tr>
+      <tr><td>Actividades M1, M2, M3 y M5</td><td>Formativa</td><td class="num">40 %</td></tr>
+      <tr><td>Actividad M4 y coevaluación</td><td>Formativa</td><td class="num">15 %</td></tr>
+      <tr><td>Portafolio digital</td><td>Sumativa</td><td class="num">10 %</td></tr>
+      <tr><td>Proyecto integrador (M6)</td><td>Sumativa</td><td class="num">25 %</td></tr>
+    </tbody>
+    <tfoot><tr><td>Total</td><td></td><td class="num">100 %</td></tr></tfoot>
+  </table></div>
+  <h2>Distribución de horas</h2>
+  <div class="tabla-cont"><table>
+    <thead><tr><th>Módulo</th><th>Semanas</th><th class="num">Sincrónicas</th><th class="num">Autónomas</th><th class="num">Total</th></tr></thead>
+    <tbody>${modulos.map(m => `<tr><td>${m.num} ${m.titulo}</td><td>${m.semanas.replace("Semanas ", "").replace("Semana ", "")}</td><td class="num">${m.sinc}</td><td class="num">${m.aut}</td><td class="num">${m.horas}</td></tr>`).join("")}</tbody>
+    <tfoot><tr><td>Total</td><td>9</td><td class="num">${modulos.reduce((a, m) => a + m.sinc, 0)}</td><td class="num">${modulos.reduce((a, m) => a + m.aut, 0)}</td><td class="num">${modulos.reduce((a, m) => a + m.horas, 0)}</td></tr></tfoot>
+  </table></div>
+  <h2>Viabilidad</h2>
+  <p class="lectura"><strong>Técnica:</strong> Moodle con app móvil sin conexión, herramientas gratuitas (Google Workspace, Canva, WhatsApp) y recursos livianos. <strong>Pedagógica:</strong> productos aplicables de inmediato en el aula, carga realista de 8 horas semanales y progresión del nivel explorador al integrador.</p>`;
+}
+
+function vistaRefs() {
+  const ordenadas = [...referencias].sort((a, b) => a.replace(/<[^>]+>/g, "").localeCompare(b.replace(/<[^>]+>/g, ""), "es"));
+  return `<h1>Referencias</h1>
+  <div class="referencias lectura">${ordenadas.map(r => `<p>${r}</p>`).join("")}</div>
+  <p class="lectura" style="margin-top:2rem;color:var(--gris)"><strong>Declaración de uso de IA:</strong> esta aula se estructuró con apoyo de inteligencia artificial generativa (Claude, Anthropic) para organizar contenidos y generar el código. El equipo verificó los datos y referencias y es responsable del contenido final, siguiendo los principios de transparencia y autoría humana (Giraldo Cardozo y Muñoz Vargas, 2025).</p>`;
+}
+
+/* =========================================================
+   MATERIAL DE ESTUDIO
+   ========================================================= */
+const lecturas = [
+  {
+    autores: "Uribe-Zapata, Zambrano-Acosta y Cano-Vásquez (2023)",
+    titulo: "Usos educativos de TIC en docentes rurales de Colombia",
+    revista: "Revista de Investigación, Desarrollo e Innovación, 13(2)",
+    doi: "https://doi.org/10.19053/20278306.v13.n2.2023.16834",
+    modulos: "M0, M1 y M5",
+    resumen: "Estudio cuantitativo con 241 docentes rurales de escuelas Escuela Nueva en Antioquia. Analiza su conectividad, el uso pedagógico del celular e internet y su nivel de competencia TIC según el MEN (2013).",
+    ideas: [
+      "El 97,1 % de los docentes tiene celular y el 81,3 % cuenta con datos móviles; muchos usan sus propios recursos para enseñar.",
+      "El 55 % está en el nivel explorador, el 26 % en el integrador y solo el 7 % en el innovador.",
+      "Las TIC se usan sobre todo para planear; en la evaluación su uso cae a cerca de una cuarta parte del de la planeación.",
+      "Los autores recomiendan formación contextualizada que empiece por la alfabetización digital básica."
+    ],
+    pregunta: "¿En qué momento usas menos las TIC: al planear, al enseñar o al evaluar? ¿Qué te lo impide?"
+  },
+  {
+    autores: "Cifuentes Garzón y Burgos Calderón (2023)",
+    titulo: "Formación de docentes de provincia en tiempos de pandemia",
+    revista: "Zona Próxima, 39",
+    doi: "https://doi.org/10.14482/zp.38.326.951",
+    modulos: "M2 y M6",
+    resumen: "Investigación acción educativa con 23 docentes de una institución pública de Cundinamarca en 2020. Los profesores diseñaron y orientaron unidades de formación entre colegas, con el marco de la Enseñanza para la Comprensión, a través de WhatsApp.",
+    ideas: [
+      "Los mismos docentes eligieron WhatsApp porque permite compartir archivos e interactuar de forma sincrónica y asincrónica con poca conectividad.",
+      "La realimentación entre colegas fortaleció el trabajo colaborativo y luego se llevó al trabajo con estudiantes.",
+      "Las dificultades fueron no poder observar directamente los talleres y la falta de interacción presencial.",
+      "Los participantes expresaron interés en seguir formándose con cursos en línea."
+    ],
+    pregunta: "¿Qué tema podrías enseñarles a tus colegas usando un grupo de WhatsApp?"
+  },
+  {
+    autores: "Giraldo Cardozo y Muñoz Vargas (2025)",
+    titulo: "Comunicación científica y ética en la era de la inteligencia artificial",
+    revista: "Acta Scientiæ Informaticæ, 9(2) · Editorial",
+    doi: "https://doi.org/10.21897/26192659.4189",
+    modulos: "M1, M4 y M6",
+    resumen: "Editorial sobre el papel de la inteligencia artificial generativa en la escritura y difusión académica, y los principios éticos que deben orientar su uso.",
+    ideas: [
+      "La IA puede apoyar la redacción, la síntesis y el diseño de recursos, pero no puede ser autora ni coautora de un trabajo.",
+      "Todo lo que produce la IA debe verificarse, porque puede generar datos o referencias falsas pero creíbles.",
+      "No deben cargarse datos personales o confidenciales en herramientas de IA.",
+      "Se recomienda declarar qué herramientas se usaron, para qué y con qué criterios."
+    ],
+    pregunta: "¿Cómo le contarías a tus estudiantes que usaste IA para preparar una guía?"
+  }
+];
+
+const glosario = [
+  ["Alfabetización digital", "Conocimientos básicos para usar dispositivos, internet y herramientas digitales de forma segura y con sentido."],
+  ["Aprendizaje móvil", "Aprendizaje que ocurre a través de dispositivos como el celular o la tableta, en cualquier lugar y momento."],
+  ["Brecha digital", "Diferencias en el acceso y en el uso de las tecnologías entre grupos de personas, por ejemplo entre zonas urbanas y rurales."],
+  ["Competencias TIC (MEN)", "Tecnológica, pedagógica, comunicativa, de gestión e investigativa; se desarrollan en tres momentos: explorador, integrador e innovador."],
+  ["Creative Commons", "Licencias que indican cómo se puede usar, compartir o adaptar una obra (BY, SA, NC, ND)."],
+  ["Enseñanza para la Comprensión (EpC)", "Marco pedagógico basado en tópicos generativos, metas de comprensión, desempeños y valoración continua."],
+  ["IA generativa", "Herramientas que producen textos, imágenes u otros contenidos a partir de instrucciones; requieren verificación humana."],
+  ["Netiqueta", "Normas de respeto y buena convivencia para comunicarse en entornos digitales."],
+  ["Recurso educativo abierto (REA)", "Material educativo con una licencia que permite usarlo, adaptarlo y compartirlo libremente."],
+  ["Rúbrica", "Instrumento de evaluación con criterios y niveles de desempeño."]
+];
+
+const guias = {
+  m0: ["Dedica unas 8 horas por semana.", "En cada foro: un aporte propio y dos respuestas a colegas.", "Descarga el material con wifi y estudia sin conexión."],
+  m1: ["Organiza tus carpetas por periodo, grado y área.", "Usa frases largas como contraseña y activa la verificación en dos pasos.", "Nunca publiques datos de estudiantes en grupos abiertos."],
+  m2: ["Lista de difusión para avisos; grupo para conversar.", "Define y comunica tus horarios de atención.", "En Classroom: anuncios informan, tareas se entregan y califican."],
+  m3: ["Busca primero en Colombia Aprende y Contacto Maestro.", "Revisa la licencia antes de usar o adaptar un recurso.", "Evalúa pertinencia, fuente, edad y peso del archivo."],
+  m4: ["Una idea principal por sección y buen contraste.", "Videos de menos de 3 minutos, grabados en horizontal.", "Si usas IA, verifica todo y decláralo."],
+  m5: ["Activa el modo cuestionario en Google Forms.", "Comparte la rúbrica antes de la actividad.", "Usa los resultados para reforzar lo que más se falló."],
+  m6: ["Secuencia: inicio, desarrollo y cierre.", "Reúne en el portafolio las evidencias de todos los módulos.", "Cierra con una reflexión sobre tu práctica."]
+};
+
+function vistaMaterial() {
+  const tab = estado.matTab || "lecturas";
+  const tabs = [["lecturas", "Lecturas"], ["guias", "Guías rápidas"], ["glosario", "Glosario"]];
+  let cuerpo = "";
+  if (tab === "lecturas") {
+    cuerpo = `<p class="lectura">Tres lecturas en español que sustentan el curso. Lee el resumen y las ideas clave, y abre el artículo completo desde su enlace.</p>` +
+      lecturas.map(l => `<article class="tarjeta-lectura">
+        <h3>${l.titulo}</h3>
+        <p class="meta">${l.autores} · <em>${l.revista}</em> · Se relaciona con ${l.modulos}</p>
+        <p>${l.resumen}</p>
+        <h3>Ideas clave</h3>
+        <ul>${l.ideas.map(i => `<li>${i}</li>`).join("")}</ul>
+        <p class="reflexion"><strong>Para reflexionar:</strong> ${l.pregunta}</p>
+        <p><a href="${l.doi}" target="_blank" rel="noopener">Leer el artículo completo</a></p>
+      </article>`).join("");
+  }
+  if (tab === "guias") {
+    cuerpo = `<p class="lectura">Lo esencial de cada módulo en pocas líneas, para repasar antes de las autoevaluaciones.</p>` +
+      modulos.map(m => `<div class="guia"><h3>${m.num} ${m.titulo}</h3><ul>${guias[m.id].map(g => `<li>${g}</li>`).join("")}</ul></div>`).join("");
+  }
+  if (tab === "glosario") {
+    cuerpo = `<dl class="glosario lectura">${glosario.map(([t, d]) => `<dt>${t}</dt><dd>${d}</dd>`).join("")}</dl>`;
+  }
+  return `<h1>Material de estudio</h1>
+  <div class="pestanas" role="tablist">${tabs.map(([id, n]) => `<button role="tab" aria-selected="${tab === id}" data-mat-tab="${id}">${n}</button>`).join("")}</div>
+  <div role="tabpanel">${cuerpo}</div>`;
+}
+
+/* =========================================================
+   JUEGOS DE REPASO
+   ========================================================= */
+const pares = [
+  ["REA", "Material con licencia que permite usarlo, adaptarlo y compartirlo"],
+  ["Brecha digital", "Diferencias en acceso y uso de tecnologías entre grupos"],
+  ["Aprendizaje móvil", "Aprender con el celular en cualquier lugar y momento"],
+  ["Rúbrica", "Criterios y niveles de desempeño para evaluar"],
+  ["Nivel explorador", "Primer momento de las competencias TIC del MEN"],
+  ["Netiqueta", "Normas de respeto para comunicarse en línea"]
+];
+
+const clasifica = [
+  { a: "Organizar las carpetas del periodo en Google Drive", c: "Tecnológica", e: "Se trata de manejar una herramienta digital." },
+  { a: "Diseñar una secuencia didáctica con recursos digitales", c: "Pedagógica", e: "Usa las TIC para mejorar la enseñanza y el aprendizaje." },
+  { a: "Enviar avisos a las familias por lista de difusión", c: "Comunicativa", e: "Es comunicarse con la comunidad educativa por medios digitales." },
+  { a: "Planear el cronograma de actividades del periodo con una herramienta digital", c: "De gestión", e: "Organiza y gestiona los procesos de la práctica docente." },
+  { a: "Buscar y analizar estudios sobre TIC en escuelas rurales", c: "Investigativa", e: "Usa las TIC para construir conocimiento sobre la propia práctica." },
+  { a: "Grabar y editar un video corto con el celular", c: "Tecnológica", e: "Implica dominar funciones de un dispositivo y una aplicación." },
+  { a: "Crear un foro para que los estudiantes debatan un tema", c: "Pedagógica", e: "Es una estrategia de aprendizaje mediada por TIC." }
+];
+const competencias = ["Tecnológica", "Pedagógica", "Comunicativa", "De gestión", "Investigativa"];
+
+const vf = [
+  { p: "En el estudio de Uribe-Zapata et al. (2023), la mayoría de docentes rurales estaba en el nivel explorador.", v: true, e: "El 55 % se ubicó en el nivel explorador." },
+  { p: "Los docentes rurales usan más las TIC para evaluar que para planear.", v: false, e: "Es al revés: la evaluación es el momento en que menos se usan (Uribe-Zapata et al., 2023)." },
+  { p: "Casi todos los docentes rurales del estudio de Antioquia tenían celular.", v: true, e: "El 97,1 % reportó tener un celular." },
+  { p: "En Cundinamarca, los docentes eligieron WhatsApp para formarse entre colegas por su facilidad y por la poca conectividad.", v: true, e: "Así lo reportan Cifuentes Garzón y Burgos Calderón (2023)." },
+  { p: "Una herramienta de IA puede figurar como coautora de un trabajo académico.", v: false, e: "La autoría implica responsabilidad, algo que la IA no puede asumir (Giraldo Cardozo y Muñoz Vargas, 2025)." },
+  { p: "Las referencias que entrega una IA siempre son reales.", v: false, e: "La IA puede inventar referencias creíbles; hay que verificarlas." },
+  { p: "Un recurso con licencia CC BY-NC se puede vender.", v: false, e: "NC significa uso no comercial." },
+  { p: "Para estudiantes con pocos datos, conviene enviar audios cortos o archivos comprimidos.", v: true, e: "Los archivos livianos llegan a más estudiantes." }
+];
+
+function barajar(a) { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; }
+
+const juegos = { tab: "memoria", mem: null, cls: null, vf: null };
+function nuevaMemoria() {
+  const cartas = [];
+  pares.forEach(([t, d], k) => { cartas.push({ k, def: false, txt: t }); cartas.push({ k, def: true, txt: d }); });
+  juegos.mem = { cartas: barajar(cartas), abiertas: [], hechas: [], intentos: 0, bloqueado: false };
+}
+function nuevoClasifica() { juegos.cls = { orden: barajar(clasifica), i: 0, aciertos: 0, resp: null }; }
+function nuevoVF() { juegos.vf = { orden: barajar(vf), i: 0, aciertos: 0, resp: null }; }
+
+function vistaJuegos() {
+  if (!juegos.mem) nuevaMemoria();
+  if (!juegos.cls) nuevoClasifica();
+  if (!juegos.vf) nuevoVF();
+  const tabs = [["memoria", "Parejas de conceptos"], ["clasifica", "¿Qué competencia es?"], ["vf", "Verdadero o falso"]];
+  let cuerpo = "";
+
+  if (juegos.tab === "memoria") {
+    const m = juegos.mem;
+    const gano = m.hechas.length === pares.length;
+    cuerpo = `<p class="lectura">Voltea dos cartas y une cada concepto con su definición.</p>
+    <div class="juego-panel">
+      <div class="marcador"><span>Parejas: <b>${m.hechas.length} de ${pares.length}</b></span><span>Intentos: <b>${m.intentos}</b></span></div>
+      ${gano ? `<div class="resultado bien" role="status"><strong>¡Lo lograste!</strong> Encontraste todas las parejas en ${m.intentos} intentos.</div>
+        <button class="boton" data-mem-reiniciar="1" style="margin-top:1rem">Jugar de nuevo</button>` :
+      `<div class="memoria">${m.cartas.map((c, i) => {
+        const hecha = m.hechas.includes(c.k), abierta = m.abiertas.includes(i);
+        const cls = hecha ? "hecha" : abierta ? "abierta" : "";
+        return `<button class="carta ${cls} ${c.def ? "def" : ""}" data-carta="${i}" aria-label="${hecha || abierta ? c.txt : "Carta boca abajo"}">${hecha || abierta ? c.txt : '<span class="dorso">?</span>'}</button>`;
+      }).join("")}</div>`}
+    </div>`;
+  }
+
+  if (juegos.tab === "clasifica") {
+    const g = juegos.cls;
+    if (g.i >= g.orden.length) {
+      cuerpo = `<div class="juego-panel"><div class="resultado ${g.aciertos >= g.orden.length - 2 ? "bien" : "mal"}" role="status"><strong>${g.aciertos} de ${g.orden.length} aciertos.</strong> ${g.aciertos >= g.orden.length - 2 ? "Reconoces muy bien las competencias TIC del MEN." : "Repasa las competencias en el glosario y vuelve a intentarlo."}</div>
+        <button class="boton" data-cls-reiniciar="1" style="margin-top:1rem">Jugar de nuevo</button></div>`;
+    } else {
+      const it = g.orden[g.i];
+      cuerpo = `<p class="lectura">Lee la acción y elige a cuál de las cinco competencias TIC del MEN (2013) corresponde mejor.</p>
+      <div class="juego-panel">
+        <div class="marcador"><span>Acción <b>${g.i + 1} de ${g.orden.length}</b></span><span>Aciertos: <b>${g.aciertos}</b></span></div>
+        <p class="enunciado">${it.a}</p>
+        <div class="opciones-juego">${competencias.map(c => {
+          let extra = "";
+          if (g.resp) { if (c === it.c) extra = "elegida-bien"; else if (c === g.resp) extra = "elegida-mal"; }
+          return `<button class="boton sec ${extra}" data-cls="${c}" ${g.resp ? "disabled" : ""}>${c}</button>`;
+        }).join("")}</div>
+        ${g.resp ? `<p class="fb ${g.resp === it.c ? "bien" : "mal"}" role="status">${g.resp === it.c ? "Correcto. " : "Era la competencia " + it.c.toLowerCase() + ". "}${it.e}</p>
+          <button class="boton" data-cls-sig="1">${g.i + 1 < g.orden.length ? "Siguiente" : "Ver resultado"}</button>` : ""}
+      </div>`;
+    }
+  }
+
+  if (juegos.tab === "vf") {
+    const g = juegos.vf;
+    if (g.i >= g.orden.length) {
+      cuerpo = `<div class="juego-panel"><div class="resultado ${g.aciertos >= g.orden.length - 2 ? "bien" : "mal"}" role="status"><strong>${g.aciertos} de ${g.orden.length} aciertos.</strong> ${g.aciertos >= g.orden.length - 2 ? "Dominas las ideas de las lecturas." : "Revisa las lecturas del material de estudio y vuelve a intentarlo."}</div>
+        <button class="boton" data-vf-reiniciar="1" style="margin-top:1rem">Jugar de nuevo</button></div>`;
+    } else {
+      const it = g.orden[g.i];
+      const acerto = g.resp !== null && (g.resp === "v") === it.v;
+      cuerpo = `<p class="lectura">Afirmaciones basadas en las lecturas y los módulos del curso.</p>
+      <div class="juego-panel">
+        <div class="marcador"><span>Afirmación <b>${g.i + 1} de ${g.orden.length}</b></span><span>Aciertos: <b>${g.aciertos}</b></span></div>
+        <p class="enunciado">${it.p}</p>
+        <div class="opciones-juego">
+          <button class="boton sec" data-vf="v" ${g.resp !== null ? "disabled" : ""}>Verdadero</button>
+          <button class="boton sec" data-vf="f" ${g.resp !== null ? "disabled" : ""}>Falso</button>
+        </div>
+        ${g.resp !== null ? `<p class="fb ${acerto ? "bien" : "mal"}" role="status">${acerto ? "Correcto. " : "Incorrecto. "}${it.e}</p>
+          <button class="boton" data-vf-sig="1">${g.i + 1 < g.orden.length ? "Siguiente" : "Ver resultado"}</button>` : ""}
+      </div>`;
+    }
+  }
+
+  return `<h1>Juegos de repaso</h1>
+  <p class="lectura">Repasa lo aprendido en el curso y en las lecturas. Puedes jugar las veces que quieras.</p>
+  <div class="pestanas" role="tablist">${tabs.map(([id, n]) => `<button role="tab" aria-selected="${juegos.tab === id}" data-jue-tab="${id}">${n}</button>`).join("")}</div>
+  <div role="tabpanel">${cuerpo}</div>`;
+}
+
+/* ---------- Render ---------- */
+function render(enfocar) {
+  const m = modulos.find(x => x.id === estado.vista);
+  let html = "";
+  if (estado.vista === "inicio") html = vistaInicio();
+  else if (estado.vista === "info") html = vistaInfo();
+  else if (estado.vista === "refs") html = vistaRefs();
+  else if (estado.vista === "material") html = vistaMaterial();
+  else if (estado.vista === "juegos") html = vistaJuegos();
+  else if (m) html = vistaModulo(m);
+  $("#vista").innerHTML = html;
+  pintarMenu();
+  if (enfocar) { window.scrollTo(0, 0); $("#vista").focus({ preventScroll: true }); }
+}
+
+/* ---------- Eventos ---------- */
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button");
+  if (!t) return;
+
+  if (t.dataset.ir) { estado.vista = t.dataset.ir; estado.pestana = "lecciones"; render(true); return; }
+  if (t.dataset.pestana) { estado.pestana = t.dataset.pestana; render(); return; }
+
+  if (t.dataset.leida) {
+    estado.lecciones[t.dataset.leida] = true;
+    const abiertas = [...document.querySelectorAll("details.leccion[open]")].map(d => d.dataset.leccion);
+    render();
+    abiertas.forEach(k => { const d = document.querySelector(`details[data-leccion="${k}"]`); if (d) d.open = true; });
+    return;
+  }
+
+  if (t.dataset.enviarQuiz) {
+    const m = modulos.find(x => x.id === t.dataset.enviarQuiz);
+    const respuestas = m.quiz.map((_, i) => {
+      const sel = document.querySelector(`input[name="q-${i}"]:checked`);
+      return sel ? Number(sel.value) : undefined;
+    });
+    if (respuestas.some(r => r === undefined)) { $("#aviso-quiz").textContent = "Responde todas las preguntas antes de enviar."; return; }
+    const nota = respuestas.filter((r, i) => r === m.quiz[i].ok).length;
+    estado.quiz[m.id] = { respuestas, nota, enviado: true, aprobado: nota >= m.quiz.length - 1 || (estado.quiz[m.id] && estado.quiz[m.id].aprobado) };
+    render();
+    return;
+  }
+
+  if (t.dataset.reintentar) {
+    const previo = estado.quiz[t.dataset.reintentar];
+    estado.quiz[t.dataset.reintentar] = { respuestas: [], enviado: false, aprobado: previo && previo.aprobado };
+    render();
+    return;
+  }
+
+  if (t.dataset.matTab) { estado.matTab = t.dataset.matTab; render(); return; }
+  if (t.dataset.jueTab) { juegos.tab = t.dataset.jueTab; render(); return; }
+
+  if (t.dataset.carta !== undefined) {
+    const m = juegos.mem, i = Number(t.dataset.carta);
+    if (m.bloqueado || m.abiertas.includes(i) || m.hechas.includes(m.cartas[i].k)) return;
+    m.abiertas.push(i);
+    if (m.abiertas.length === 2) {
+      m.intentos++;
+      const [a, b] = m.abiertas;
+      if (m.cartas[a].k === m.cartas[b].k) { m.hechas.push(m.cartas[a].k); m.abiertas = []; render(); }
+      else { m.bloqueado = true; render(); setTimeout(() => { m.abiertas = []; m.bloqueado = false; render(); }, 1200); }
+    } else render();
+    return;
+  }
+  if (t.dataset.memReiniciar) { nuevaMemoria(); render(); return; }
+
+  if (t.dataset.cls !== undefined) {
+    const g = juegos.cls; if (g.resp) return;
+    g.resp = t.dataset.cls; if (g.resp === g.orden[g.i].c) g.aciertos++; render(); return;
+  }
+  if (t.dataset.clsSig) { juegos.cls.i++; juegos.cls.resp = null; render(); return; }
+  if (t.dataset.clsReiniciar) { nuevoClasifica(); render(); return; }
+
+  if (t.dataset.vf !== undefined) {
+    const g = juegos.vf; if (g.resp !== null) return;
+    g.resp = t.dataset.vf; if ((g.resp === "v") === g.orden[g.i].v) g.aciertos++; render(); return;
+  }
+  if (t.dataset.vfSig) { juegos.vf.i++; juegos.vf.resp = null; render(); return; }
+  if (t.dataset.vfReiniciar) { nuevoVF(); render(); return; }
+
+  if (t.dataset.publicar) {
+    const txt = $("#nuevo-post").value.trim();
+    if (txt.length < 20) { $("#aviso-foro").textContent = "Escribe un aporte de al menos 20 caracteres."; return; }
+    const id = t.dataset.publicar;
+    const seguro = txt.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+    estado.foro[id] = (estado.foro[id] || []).concat([{ autor: "Tú", texto: seguro, fecha: new Date().toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" }), tipo: "propio" }]);
+    render();
+  }
+});
+
+document.addEventListener("change", (e) => {
+  if (e.target.dataset.act) { estado.actividades[e.target.dataset.act] = e.target.checked; render(); }
+});
+
+render();
+</script>
+</body>
+</html>
